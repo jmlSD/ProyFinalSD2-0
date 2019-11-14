@@ -2,11 +2,11 @@ package hilostareas;
 
 import java.io.*;
 
-
 public class HiloA1 extends Thread{
     
     String contenido;
     
+    //  Devuelve en formato, el texto procesado
     public String getContenido() {
         return contenido;
     }
@@ -19,7 +19,6 @@ public class HiloA1 extends Thread{
                 texto += s;
                 s = br.readLine();
             }
-            //System.out.println("El contenido es:" + texto);
             contenido = texto.toLowerCase();
             
         } catch (Exception e) {

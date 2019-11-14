@@ -3,6 +3,7 @@ package serverrpc;
 import funciontareas.*;
 import java.io.IOException;
 
+//  Implementa las funciones para el servidor RPC
 public class InterfazRPC {
     public int buscaLetra(String pal) throws InterruptedException{
         Tarea3A tA = new Tarea3A();

@@ -13,25 +13,28 @@ import serverrpc.*;
 import serversockets.ServidorHilos;
 
 public class Funcionalidad {
+    // Variables para servidor sockets
     ServidorHilos ssck;
     Socket conexionSCK;
     DataInputStream dis;
     DataOutputStream dos;
     String menuSCK;
-    int clientssck = 0;
+    // Variables para servidor RPC
     XmlRpcClient conexionRPC;    
     Server_rpc srpc;
     Object menuRPC;
-    int clientrpc = 0;
+    // Variables para servidor RMI
     InterfazRMI interfazRMI;
     ServerRMI sRMI;
     Registry registry;
-    int idRMI = 0, clientRMI = 0;
     String menuRMI;
-    private static final int PuertoRMi = 8085, PuertoRPC = 8081, PuertoSCK = 8084; //Si cambias aquí el puerto, recuerda cambiarlo en el servidor
+    // Variables de control para usuarios, arriba es para createRegistry
+    int clientssck = 0, clientrpc = 0, arribaRMI = 0, clientRMI = 0;
+    //declaracion de numeros de puertos para cada servidor
+    private static final int PuertoRMi = 8085, PuertoRPC = 8081, PuertoSCK = 8084; 
     
-    public String desplegaMenu(){
-        return "----- Bienvenido al Sistema Jhonys -----\n"
+    public String desplegaMenu(){  //Menu principal
+        return "----- Bienvenido al Sistema Jhonnys -----\n"
                 + "¿Con qué tipo de servidor desear trabajar?\n"
                 + "1.- Sockets\n"
                 + "2.- RPC\n"
@@ -40,50 +43,46 @@ public class Funcionalidad {
     }
     
     public String solicitudMenu(int opc) throws IOException{
-        String resultado = "";
                     
-        if(opc == 1){
-            System.out.println("llegue a opc 1");
+        if(opc == 1){  //averiguamos si existe una conexion, si no, la creamos
             if(conexionSCK == null) {
                 this.conexionSCK = conectaSCK(); 
                 this.dis = new DataInputStream(conexionSCK.getInputStream());
-            
+                //Se obtiene el menu del servidor sockets
                 menuSCK = dis.readUTF() + "\n" + dis.readUTF() + "\n" + dis.readUTF() + "\n" + dis.readUTF() + "\n";
             }
             System.out.println("Conexion exitosa al servidor Sockets");
-            clientssck++;
+            clientssck++;  //Se incrementa el numero de usuarios activos
             return menuSCK;
             
-        }else if(opc == 2){
+        }else if(opc == 2){     //averiguamos si existe una conexion, si no, la creamos
             try{
                 if(conexionRPC == null){
                     this.conexionRPC = conectaRPC();
-                
-                Vector<Integer> params = new Vector<Integer>();
-                System.out.println("Conexion exitosa al servidor RPC");
-                menuRPC = conexionRPC.execute("myServerRPC.desplegaMenu", params);
+                //Se obtiene el menu del servidor sockets
+                menuRPC = conexionRPC.execute("myServerRPC.desplegaMenu", new Vector<Integer>());
                 }
-                clientrpc++;
-                resultado = (String) menuRPC;
-
             }catch(Exception ex){
-                System.err.println("Client: " + ex);
+                System.err.println("Funcionalidad: " + ex);
             }
-            return resultado;
             
-        }else if(opc == 3){            
+            System.out.println("Conexion exitosa al servidor RPC");
+            clientrpc++;  //Se incrementa el numero de usuarios activos
+            return (String) menuRPC;
+            
+        }else if(opc == 3){     //averiguamos si existe una conexion, si no, la creamos       
             try{
                 if(interfazRMI == null) {
-                    this.interfazRMI = conectaRMI(idRMI);
+                    this.interfazRMI = conectaRMI(arribaRMI);
+                    //Se obtiene el menu del servidor sockets
                     menuRMI = (String) interfazRMI.mostrarMenu();
-                }  
-                System.out.println("Conexion exitosa al servidor RMI"); 
-                idRMI += 1;
-                clientRMI += 1;
-                
+                    arribaRMI += 1; //Le indicamos que ya se hizo el createRegistry
+                }   
             } catch (Exception ex) {
-                System.err.println("Client: " + ex);
+                System.err.println("Funcionalidad: " + ex);
             }
+            System.out.println("Conexion exitosa al servidor RMI"); 
+            clientRMI++;    //Se incrementa el numero de usuarios activos
             return menuRMI;
             
         }else{
@@ -92,7 +91,7 @@ public class Funcionalidad {
     }
     
     
-    public Socket conectaSCK() throws IOException {
+    public Socket conectaSCK() throws IOException {    //Levanta el servidor Sockets, hace una conexion y ejecuta el menu de secundario
         this.ssck = new ServidorHilos();
         ssck.levantaSCK();
         Socket sk = new Socket("localhost", PuertoSCK);
@@ -100,68 +99,69 @@ public class Funcionalidad {
         return sk;
     }
     
+    // Funcion de ejecucion de para tarea3A o 3B con Sockets
     public String procesamientoSCK(int opc, String x1) throws RemoteException, NotBoundException, 
                         MalformedURLException, IOException, InterruptedException{        
 
         int resultado;
         this.dos  = new DataOutputStream(conexionSCK.getOutputStream());
-        System.out.println("lleggue a dos");
         
         if(opc < 3){
-        dos.writeInt(opc);
+        dos.writeInt(opc);      //Pasamos primero si buscamos letra o palabra
         this.ssck.executeSCK(1, conexionSCK);
         
         String s = x1;
-        dos.writeUTF(s);
+        dos.writeUTF(s);        //Pasamos ahora el valor de letra o palabra
         this.ssck.executeSCK(2, conexionSCK);
         
         resultado = dis.readInt();
-        clientssck--;
+        clientssck--;       //Restamos el numero de usuarios activos en sockets
+        apagaSCK(clientssck);
         return "El resultado es " + resultado;
         }
         
-        if(opc == 3)
+        if(opc == 3)  //para salir solo restamos un usuario
             clientssck--;
         
-        if(clientssck == 0){
-            System.out.println("Entre a cerrar");
+        apagaSCK(clientssck);
+        return "Hasta luego, Sistema Jhonnys";      
+    }
+    
+    // Funcion que si no hay usuarios activos apaga el servidor sockets
+    public void apagaSCK(int numCli) throws IOException{
+    
+            if(numCli == 0){
             dis.close();
             dos.close();
             conexionSCK.close();
             conexionSCK = null;
             this.ssck.apagaSCK();
         }
-        return "";      
     }
-
     
+    // Funcion de ejecucion de para tarea3A o 3B con RPC
     public String procesamientoRPC(int opc, String pal) throws XmlRpcException, IOException{
         int resultado = 0;
         Object resS = null;
         Vector<Object> params = new Vector<>();
         params.add(pal);
         
-        if(opc == 1){
+        if(opc == 1){   //funcion que busca letra
             resS = conexionRPC.execute("myServerRPC.buscaLetra", params);
-            
-        }else if(opc == 2){
+        }else if(opc == 2){     //funcion que busca palabra
             resS = conexionRPC.execute("myServerRPC.buscaPalabra", params);
-        }else if(opc == 3) {
+        }else if(opc == 3) {    //funcion para salir
                 clientrpc--;
-                if(clientrpc == 0){
+                if(clientrpc == 0){     //solo si no hay usuario activos en RPC
                     this.srpc.apagaRPC();
                     conexionRPC = null;
                     System.out.println("Servidor RPC apagado por eleccion\n");
                 }
-                return "byebye";
+                return "Hasta luego, Sistema Jhonnys";
         }else
             return "Opcion no valida";  
         
-        /*if(resS != null) {
-            resultado = ((Integer)resS);
-            System.out.println("Numero de coinicidencias: " + resultado);
-            return "Numero de coinicidencias: " + resultado;
-        }*/
+        // Esto se ejecuta solo si se busco letra o palabra
         resultado = ((Integer)resS);
         System.out.println("Numero de coinicidencias: " + resultado);
         
@@ -175,6 +175,7 @@ public class Funcionalidad {
         
     }
     
+    //Levanta el servidor RPC, hace una conexion
     public XmlRpcClient conectaRPC() throws MalformedURLException{
         XmlRpcClient conexionRPC;
         
@@ -184,73 +185,54 @@ public class Funcionalidad {
         
         return conexionRPC;
     }
-    /*public String pideLetraoPal(int opc){
-        String pide = "";
-        if(opc == 1){
-            pide = "Dame la letra a buscar";
-        }else if(opc == 2){
-            pide = "Dame la palabra a buscar";
-        }
-        
-        return pide;
-    }*/
     
+    // Funcion de ejecucion de para tarea3A o 3B con RMI
     public String procesamientoRMI(int opc, String pal) throws RemoteException, NotBoundException, 
             MalformedURLException, IOException, InterruptedException{        
         
         int resultado;                      
-        if(opc == 1){                               
+        if(opc == 1){   //funcion que busca letra
             resultado = interfazRMI.buscaLetra(pal);           
             
-        }else if(opc == 2){                        
+        }else if(opc == 2){    //funcion que busca palabra
             resultado = interfazRMI.buscaPalabra(pal);                      
             
-        }else if(opc == 3){
+        }else if(opc == 3){     //funcion para salir
             clientRMI--;
             
-            if(clientRMI == 0){
-                this.sRMI.apagaRMI(idRMI);
+            if(clientRMI == 0){     //Para apagar el servidor, si no hay usuarios activos en RMI
+                this.sRMI.apagaRMI();
                 interfazRMI = null;
-                System.out.println("Servidor RMI apagado por 3");
+                System.out.println("Servidor RMI apagado por eleccion");
             }
-            return "Servidor RMI apago";
+            return "Hasta luego, Sistemas Jhonnys";
             
-        }else{
+        }else{      //Si se selecciona una opcion invalida
             System.out.println("Opcion no valida");
             return "Opcion no valida";
         }
-        
+        //Solo se ejecuta cuando se realizo una busqueda
         System.out.println("Numero de coinicidencias: " + resultado);
-        System.out.println("mi idrmi es : " + idRMI);
         
         clientRMI--;
-        System.out.println("tengo n clientes: " + clientRMI);
-        if(clientRMI == 0){
-            this.sRMI.apagaRMI(idRMI-1);
+        if(clientRMI == 0){     //Para apagar el servidor, si no hay usuarios activos en RMI
+            this.sRMI.apagaRMI();
             interfazRMI = null;
-            //registry.unbind(null);
-            System.out.println("Servidor RMI Apagado po proceso");
+            System.out.println("Servidor RMI Apagado por proceso");
         }
         return "Numero de coinicidencias: " + resultado;
     }
     
-    public InterfazRMI conectaRMI(int id) throws RemoteException, AlreadyBoundException, MalformedURLException, AccessException, NotBoundException{
+    //  Funcion para levantar el servidor RMI, establece una conexion, y regresa una interfaz
+    public InterfazRMI conectaRMI(int opc) throws RemoteException, AlreadyBoundException, MalformedURLException, AccessException, NotBoundException{
         
         this.sRMI = new ServerRMI(); 
-        sRMI.executeRMI(id);
+        sRMI.executeRMI(opc);
 
         registry = LocateRegistry.getRegistry("localhost",PuertoRMi);
         
-        
-        //System.out.println("Pase registro del servidor prin RMi y idRMI es: " + idRMI);
-        
-        String ruta = "Calculadora" + idRMI;
-        System.out.println("resula = " + ruta);
-        
+        String ruta = "Calculadora";
         interfazRMI = (InterfazRMI) registry.lookup(ruta);
-        
-        //System.out.println("Termine conecta RMi");
-        
         return interfazRMI;
     }
     

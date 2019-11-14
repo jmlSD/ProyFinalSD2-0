@@ -2,6 +2,7 @@ package hilostareas;
 
 import java.util.List;
 
+//  Calcula el numero de palabras basado en la longitud del arreglo
 public class HiloA3 extends Thread{
     List<String> arrayConte;
     int numApa;

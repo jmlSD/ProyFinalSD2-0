@@ -1,9 +1,9 @@
 package funciontareas;
 
-import hilostareas.HiloA1;
-import hilostareas.HiloB2;
+import hilostareas.*;
 import java.io.IOException;
 
+// Controlador de los hilos para buscar una Palabra, es decir el procesamiento de la informacion
 public class Tarea3B {
     
     private int numeroApariciones = 0;
@@ -21,6 +21,7 @@ public class Tarea3B {
         h2.join();        
     }
     
+    // Regresa el numero de coincidencias de un procesamiento
     public int getApariciones(){
         return this.numeroApariciones;
     }

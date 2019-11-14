@@ -2,6 +2,7 @@ package cs;
 
 import org.apache.xmlrpc.*;
 
+// Levanta el servidor principal, basado en RPC para funcionar como intermadiario entre el usuario y los servidores secundarios
 public class Server {        
     public static void main(String[] args){
         try{

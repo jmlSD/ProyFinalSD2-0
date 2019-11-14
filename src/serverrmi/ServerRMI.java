@@ -13,19 +13,16 @@ import funciontareas.*;
 import java.io.IOException;
 
 public class ServerRMI {
-    private static final int PUERTO = 8085; //Si cambias aquí el puerto, recuerda cambiarlo en el cliente
+    private static final int PUERTO = 8085; 
     Registry registry;
     Remote remote;
     int aux = 0;
-
-    public ServerRMI() {
-        this.registry = null;
-    }
     
     public void executeRMI(int id) throws RemoteException, AlreadyBoundException, MalformedURLException{
         
             remote = UnicastRemoteObject.exportObject(new InterfazRMI() {
             
+            //  Se sobreescriben los metodos para utilizar las tareas con hilos
             @Override
             public int buscaLetra(String pal) throws RemoteException, InterruptedException {
                 Tarea3A tA = new Tarea3A();
@@ -45,33 +42,22 @@ public class ServerRMI {
 
             @Override
             public String mostrarMenu() throws RemoteException {
-                return "\n\n------------------\n\n[1] => Buscar letra\n[2] => Buscar palabra\n[3] => Salir\nElige: ";
+                return "\n\n------------------\n\n1: Buscar letra\n2: Buscar palabra\n3: Salir\nElige: ";
             };            
         }, 0);
               
-        System.out.println("Estoy ante de registro");
-        if(registry == null)
+        if(id == 0)     //Solo se ejecuta cuando el id es igual a 0
             this.registry = LocateRegistry.createRegistry(PUERTO); //Me cagas mi mB we
-        System.out.println("Despues de registro");
-        //System.out.println("Llgue a ligantion e id es: " + id);
-        String ruta = "//localhost:8085/Calculadora" + id;
-        //System.out.println("Ruta = " + ruta);
-        //registry.bind(ruta, remote);
+
+        // levanta y vincula el servidor con el objeto calculadora
+        System.out.println("Inicio exitoso del server RMI \n");
+        String ruta = "//localhost:8085/Calculadora";
         Naming.rebind(ruta, remote);   
-        //System.out.println("Pase e a ligantion");
     }
     
-    public void creaReg() throws RemoteException {
-        this.registry = LocateRegistry.createRegistry(PUERTO);
-    }
-    
-    public void apagaRMI(int id) throws RemoteException, NotBoundException, MalformedURLException{
-        String ruta = "//localhost:" + PUERTO + "/Calculadora" + id;
+    //  Detiene el servidor RMI, desvincula con naming
+    public void apagaRMI() throws RemoteException, NotBoundException, MalformedURLException{
+        String ruta = "//localhost:" + PUERTO + "/Calculadora";
         Naming.unbind(ruta);
-        System.out.println("Pase naming");
-        //registry.unbind("Calculadora" + id);
-        System.out.println("Pase unbindg");
-        registry = null;
-        //registry.unbind("//localhost:" + PUERTO + "/Calculadora" + id);
     }
 }
