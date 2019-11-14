@@ -34,14 +34,23 @@ public class Client {
             parmenu.add(opc);
             int opc2 = opc;
             
+            
             do{
                 procMenu = rpcClient.execute("myServer.solicitudMenu", parmenu);
                 System.out.println(procMenu);
                 opc = sc.nextInt();
                 
                 if(opc > 0 && opc < 4){
-                    System.out.println("Que letra o palabra");
+                    if(opc < 2) {
+                    do{
+                    System.out.println("Que letra");
                     c1 = sc.next();
+                    }while(c1.length() != 1);
+                    }else if(opc < 3){
+                        System.out.println("Que palabra");
+                        c1 = sc.next();  
+                    }
+                   
                     params.clear();
                     params.add(opc);
                     params.add(c1);

@@ -15,10 +15,17 @@ public class HiloB2 extends Thread{
         int nPalabra = 0;
         this.entrada = this.entrada.toLowerCase();
         palabra = palabra.toLowerCase();
-        while( this.entrada.indexOf(palabra) > -1){
+        String [] palabras = entrada.split(" ");
+        
+        for(String pal: palabras){
+            if(pal.equals(palabra))
+                nPalabra++;
+        }
+        
+        /*while( this.entrada.indexOf(palabra) > -1){
             this.entrada = this.entrada.substring(this.entrada.indexOf(palabra) + palabra.length(), this.entrada.length());
             nPalabra++;
-        }        
+        } */       
         return nPalabra;
     }
 }

@@ -22,7 +22,7 @@ public class ServerRMI {
         this.registry = null;
     }
     
-    public void executeRMI() throws RemoteException, AlreadyBoundException, MalformedURLException{
+    public void executeRMI(int id) throws RemoteException, AlreadyBoundException, MalformedURLException{
         
             remote = UnicastRemoteObject.exportObject(new InterfazRMI() {
             
@@ -48,17 +48,30 @@ public class ServerRMI {
                 return "\n\n------------------\n\n[1] => Buscar letra\n[2] => Buscar palabra\n[3] => Salir\nElige: ";
             };            
         }, 0);
-      
-                this.registry = LocateRegistry.createRegistry(PUERTO);
-        
-        System.out.println("Llgue a ligantion");
-        //registry.bind("//localhost:8085/Calculadora", remote);
-        Naming.rebind("//localhost:8085/Calculadora",remote);   
-        System.out.println("Pase e a ligantion");
+              
+        System.out.println("Estoy ante de registro");
+        if(registry == null)
+            this.registry = LocateRegistry.createRegistry(PUERTO); //Me cagas mi mB we
+        System.out.println("Despues de registro");
+        //System.out.println("Llgue a ligantion e id es: " + id);
+        String ruta = "//localhost:8085/Calculadora" + id;
+        //System.out.println("Ruta = " + ruta);
+        //registry.bind(ruta, remote);
+        Naming.rebind(ruta, remote);   
+        //System.out.println("Pase e a ligantion");
     }
     
-    public void apagaRMI() throws RemoteException, NotBoundException, MalformedURLException{
-        Naming.rebind("//localhost:" + PUERTO + "/Calculadora", registry);
-        registry.rebind("//localhost:" + PUERTO + "/Calculadora", registry);
+    public void creaReg() throws RemoteException {
+        this.registry = LocateRegistry.createRegistry(PUERTO);
+    }
+    
+    public void apagaRMI(int id) throws RemoteException, NotBoundException, MalformedURLException{
+        String ruta = "//localhost:" + PUERTO + "/Calculadora" + id;
+        Naming.unbind(ruta);
+        System.out.println("Pase naming");
+        //registry.unbind("Calculadora" + id);
+        System.out.println("Pase unbindg");
+        registry = null;
+        //registry.unbind("//localhost:" + PUERTO + "/Calculadora" + id);
     }
 }

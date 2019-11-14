@@ -17,11 +17,17 @@ public class Funcionalidad {
     Socket conexionSCK;
     DataInputStream dis;
     DataOutputStream dos;
+    String menuSCK;
+    int clientssck = 0;
     XmlRpcClient conexionRPC;    
     Server_rpc srpc;
+    Object menuRPC;
+    int clientrpc = 0;
     InterfazRMI interfazRMI;
     ServerRMI sRMI;
     Registry registry;
+    int idRMI = 0, clientRMI = 0;
+    String menuRMI;
     private static final int PuertoRMi = 8085, PuertoRPC = 8081, PuertoSCK = 8084; //Si cambias aquí el puerto, recuerda cambiarlo en el servidor
     
     public String desplegaMenu(){
@@ -37,22 +43,28 @@ public class Funcionalidad {
         String resultado = "";
                     
         if(opc == 1){
-            this.conexionSCK = conectaSCK(); 
-            System.out.println("Conexion exitosa al servidor Sockets");
-            this.dis = new DataInputStream(conexionSCK.getInputStream());
+            System.out.println("llegue a opc 1");
+            if(conexionSCK == null) {
+                this.conexionSCK = conectaSCK(); 
+                this.dis = new DataInputStream(conexionSCK.getInputStream());
             
-            String menu = dis.readUTF() + "\n" + dis.readUTF() + "\n" + dis.readUTF() + "\n" + dis.readUTF() + "\n";
-            return menu;
+                menuSCK = dis.readUTF() + "\n" + dis.readUTF() + "\n" + dis.readUTF() + "\n" + dis.readUTF() + "\n";
+            }
+            System.out.println("Conexion exitosa al servidor Sockets");
+            clientssck++;
+            return menuSCK;
             
         }else if(opc == 2){
             try{
-                //if(conexionRPC == null)
+                if(conexionRPC == null){
                     this.conexionRPC = conectaRPC();
                 
                 Vector<Integer> params = new Vector<Integer>();
                 System.out.println("Conexion exitosa al servidor RPC");
-                Object menu = conexionRPC.execute("myServerRPC.desplegaMenu", params);
-                resultado = (String) menu;
+                menuRPC = conexionRPC.execute("myServerRPC.desplegaMenu", params);
+                }
+                clientrpc++;
+                resultado = (String) menuRPC;
 
             }catch(Exception ex){
                 System.err.println("Client: " + ex);
@@ -61,14 +73,18 @@ public class Funcionalidad {
             
         }else if(opc == 3){            
             try{
-                this.interfazRMI = conectaRMI();
-                System.out.println("Conexion exitosa al servidor RMI");
-                resultado = (String) interfazRMI.mostrarMenu();
+                if(interfazRMI == null) {
+                    this.interfazRMI = conectaRMI(idRMI);
+                    menuRMI = (String) interfazRMI.mostrarMenu();
+                }  
+                System.out.println("Conexion exitosa al servidor RMI"); 
+                idRMI += 1;
+                clientRMI += 1;
                 
             } catch (Exception ex) {
                 System.err.println("Client: " + ex);
             }
-            return resultado;
+            return menuRMI;
             
         }else{
             return "Opcion no valida";
@@ -89,7 +105,9 @@ public class Funcionalidad {
 
         int resultado;
         this.dos  = new DataOutputStream(conexionSCK.getOutputStream());
-
+        System.out.println("lleggue a dos");
+        
+        if(opc < 3){
         dos.writeInt(opc);
         this.ssck.executeSCK(1, conexionSCK);
         
@@ -98,13 +116,22 @@ public class Funcionalidad {
         this.ssck.executeSCK(2, conexionSCK);
         
         resultado = dis.readInt();
-    
-        dis.close();
-        dos.close();
-        conexionSCK.close();
-        this.ssck.apagaSCK();
-        
+        clientssck--;
         return "El resultado es " + resultado;
+        }
+        
+        if(opc == 3)
+            clientssck--;
+        
+        if(clientssck == 0){
+            System.out.println("Entre a cerrar");
+            dis.close();
+            dos.close();
+            conexionSCK.close();
+            conexionSCK = null;
+            this.ssck.apagaSCK();
+        }
+        return "";      
     }
 
     
@@ -120,8 +147,12 @@ public class Funcionalidad {
         }else if(opc == 2){
             resS = conexionRPC.execute("myServerRPC.buscaPalabra", params);
         }else if(opc == 3) {
-                this.srpc.apagaRPC();
-                System.out.println("Servidor RPC apagado \n");
+                clientrpc--;
+                if(clientrpc == 0){
+                    this.srpc.apagaRPC();
+                    conexionRPC = null;
+                    System.out.println("Servidor RPC apagado por eleccion\n");
+                }
                 return "byebye";
         }else
             return "Opcion no valida";  
@@ -133,8 +164,13 @@ public class Funcionalidad {
         }*/
         resultado = ((Integer)resS);
         System.out.println("Numero de coinicidencias: " + resultado);
-        this.srpc.apagaRPC();
-        System.out.println("Servidor RPC apagado \n");
+        
+        clientrpc--;
+        if(clientrpc == 0){
+            this.srpc.apagaRPC();
+            conexionRPC = null;
+            System.out.println("Servidor RPC apagado por proceso \n");
+        }
         return "Numero de coinicidencias: " + resultado;
         
     }
@@ -170,9 +206,13 @@ public class Funcionalidad {
             resultado = interfazRMI.buscaPalabra(pal);                      
             
         }else if(opc == 3){
-            this.sRMI.apagaRMI();
-            System.out.println("Servidor RMI apagado");
+            clientRMI--;
             
+            if(clientRMI == 0){
+                this.sRMI.apagaRMI(idRMI);
+                interfazRMI = null;
+                System.out.println("Servidor RMI apagado por 3");
+            }
             return "Servidor RMI apago";
             
         }else{
@@ -181,19 +221,35 @@ public class Funcionalidad {
         }
         
         System.out.println("Numero de coinicidencias: " + resultado);
-        this.sRMI.apagaRMI();
-        //registry.unbind(null);
-        System.out.println("Servidor RMI Apagado");
+        System.out.println("mi idrmi es : " + idRMI);
         
+        clientRMI--;
+        System.out.println("tengo n clientes: " + clientRMI);
+        if(clientRMI == 0){
+            this.sRMI.apagaRMI(idRMI-1);
+            interfazRMI = null;
+            //registry.unbind(null);
+            System.out.println("Servidor RMI Apagado po proceso");
+        }
         return "Numero de coinicidencias: " + resultado;
     }
     
-    public InterfazRMI conectaRMI() throws RemoteException, AlreadyBoundException, MalformedURLException, AccessException, NotBoundException{
-        this.sRMI = new ServerRMI();
-        sRMI.executeRMI();
+    public InterfazRMI conectaRMI(int id) throws RemoteException, AlreadyBoundException, MalformedURLException, AccessException, NotBoundException{
+        
+        this.sRMI = new ServerRMI(); 
+        sRMI.executeRMI(id);
 
         registry = LocateRegistry.getRegistry("localhost",PuertoRMi);
-        interfazRMI = (InterfazRMI) registry.lookup("Calculadora");
+        
+        
+        //System.out.println("Pase registro del servidor prin RMi y idRMI es: " + idRMI);
+        
+        String ruta = "Calculadora" + idRMI;
+        System.out.println("resula = " + ruta);
+        
+        interfazRMI = (InterfazRMI) registry.lookup(ruta);
+        
+        //System.out.println("Termine conecta RMi");
         
         return interfazRMI;
     }

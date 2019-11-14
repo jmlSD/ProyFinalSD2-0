@@ -46,7 +46,7 @@ public class ManejadorHilos implements Runnable {
                         Tarea3A p = new Tarea3A();
                         int res = p.tareaA(dato);
                         dos.writeInt(res);
-                        System.out.println("El numero de coincidencias es: " + res);
+                        System.out.println("El numero de coincidencias de "+dato+" es: " + res);
                         break;
                         
                     case 2:
@@ -55,7 +55,7 @@ public class ManejadorHilos implements Runnable {
                         h.tareaB(dato);
                         res = h.getApariciones();
                         dos.writeInt(res);
-                        System.out.println("El numero de coincidencias es: " + res);
+                        System.out.println("El numero de coincidencias de "+dato+" es: " + res);
                         break;
                         
                     case 3:
